@@ -1,0 +1,37 @@
+---
+title: "data_stat"
+author: "ajing"
+date: "January 2, 2016"
+output: html_document
+---
+
+Cleaning and some basic operation on data
+```{r}
+train_data <- read.csv("./data/CAX_Bidding_TRAIN_Molecule_3_4_5.csv")
+test_pre_data  <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Pre_LOE.csv")
+test_pos_data <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Post_LOE.csv")
+submit_format <- read.csv("./data/CAX_Bidding_SubmissionFormat.csv")
+
+train_data$Start_date = as.Date(train_data$Start_date, "%m-%d-%Y")
+train_data$End_date_including_extension = as.Date(train_data$End_date_including_extension, "%m-%d-%Y")
+
+train_data$Offer_date <- as.POSIXlt( 
+  train_data$Offer_date, 
+  format = ifelse( 
+    grepl("M", train_data$Offer_date), 
+    "%m-%d-%y %H:%M %p", 
+    "%m-%d-%Y %H:%M" 
+  ) 
+)
+
+```
+
+```{r}
+summary(train_data)
+summary(test_pre_data)
+summary(test_pos_data)
+
+setdiff(colnames(train_data), colnames(test_pre_data))
+setdiff(colnames(train_data), colnames(test_pos_data))
+```
+
