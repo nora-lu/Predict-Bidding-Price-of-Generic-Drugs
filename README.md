@@ -19,3 +19,4 @@ https://www.crowdanalytix.com/contests/predict-bidding-price-of-generic-drugs
 ## Q&A
 1. What is the difference between pre LOE price data and post LOE data?
 2. MAPE?
+3. What is Price_per_standard_unit?
