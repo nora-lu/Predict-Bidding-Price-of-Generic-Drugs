@@ -12,6 +12,8 @@ test_pre_data  <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Pre_LOE.csv")
 test_pos_data <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Post_LOE.csv")
 submit_format <- read.csv("./data/CAX_Bidding_SubmissionFormat.csv")
 
+region <- read.csv("./data/CAX_AdditionalData_Regions.csv")
+
 train_data$Start_date = as.Date(train_data$Start_date, "%m-%d-%Y")
 train_data$End_date_including_extension = as.Date(train_data$End_date_including_extension, "%m-%d-%Y")
 
