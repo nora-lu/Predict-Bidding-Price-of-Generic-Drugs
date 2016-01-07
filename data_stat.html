@@ -73,6 +73,8 @@ test_pre_data  &lt;- read.csv(&quot;./data/CAX_Bidding_TEST_Molecule_6_Pre_LOE.c
 test_pos_data &lt;- read.csv(&quot;./data/CAX_Bidding_TEST_Molecule_6_Post_LOE.csv&quot;)
 submit_format &lt;- read.csv(&quot;./data/CAX_Bidding_SubmissionFormat.csv&quot;)
 
+region &lt;- read.csv(&quot;./data/CAX_AdditionalData_Regions.csv&quot;)
+
 train_data$Start_date = as.Date(train_data$Start_date, &quot;%m-%d-%Y&quot;)
 train_data$End_date_including_extension = as.Date(train_data$End_date_including_extension, &quot;%m-%d-%Y&quot;)
 

@@ -7,15 +7,15 @@ output: html_document
 
 Cleaning and some basic operation on data
 ```{r}
+library(data.table)
+
 train_data <- read.csv("./data/CAX_Bidding_TRAIN_Molecule_3_4_5.csv")
-test_pre_data  <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Pre_LOE.csv")
-test_pos_data <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Post_LOE.csv")
 submit_format <- read.csv("./data/CAX_Bidding_SubmissionFormat.csv")
 
 region <- read.csv("./data/CAX_AdditionalData_Regions.csv")
 
-train_data$Start_date = as.Date(train_data$Start_date, "%m-%d-%Y")
-train_data$End_date_including_extension = as.Date(train_data$End_date_including_extension, "%m-%d-%Y")
+train_data$Start_date = as.Date(train_data$Start_date, "%d-%m-%Y")
+train_data$End_date_including_extension = as.Date(train_data$End_date_including_extension, "%d-%m-%Y")
 
 train_data$Offer_date <- as.POSIXlt( 
   train_data$Offer_date, 
@@ -26,6 +26,33 @@ train_data$Offer_date <- as.POSIXlt(
   ) 
 )
 
+train_data <- data.table(train_data)
+train_data[, table(Molecule, format(Start_date, "%Y"))]
+train_data[, ID := as.factor(ID)]
+
+# add a column for pre 1 post 0
+
+# for testing data
+## join test pos and test pre
+test_pre_data  <- data.table(read.csv("./data/CAX_Bidding_TEST_Molecule_6_Pre_LOE.csv"))
+test_pos_data <- data.table(read.csv("./data/CAX_Bidding_TEST_Molecule_6_Post_LOE.csv"))
+test_data <- rbind(cbind(test_pre_data, Pre = factor(1)), cbind(test_pos_data, Pre = factor(0)))
+
+test_data[, Start_date := as.Date(Start_date, "%d-%m-%Y")]
+test_data[, End_date_including_extension := as.Date(End_date_including_extension, "%d-%m-%Y")]
+test_data = data.frame(test_data)
+test_data$Offer_date <- as.POSIXlt( 
+  test_data$Offer_date, 
+  format = ifelse( 
+    grepl("M", test_data$Offer_date), 
+    "%m-%d-%y %H:%M %p", 
+    "%m-%d-%Y %H:%M" 
+  ) 
+)
+test_data$ID = as.factor(test_data$ID)
+
+summary(test_data)
+
 ```
 
 ```{r}
@@ -35,5 +62,38 @@ summary(test_pos_data)
 
 setdiff(colnames(train_data), colnames(test_pre_data))
 setdiff(colnames(train_data), colnames(test_pos_data))
+```
+
+```{r}
+library(ggplot2)
+ggplot(train_data, aes(x = Start_date, y = Winning_price_per_standard_unit, color = Molecule))+ geom_line()
+
+ggplot(train_data[Province == "Provice1" & Region == "Region1"], aes(x = Start_date, y = Winning_price_per_standard_unit, color = Molecule))+ geom_line()
+```
+
+
+Build a model
+```{r}
+nzv <- nearZeroVar(train_data)
+
+numberOfClasses <- max(y) + 1
+
+param <- list("objective" = "reg:linear",
+              "eval_metric" = "rmse")
+
+cv.nround <- 500
+cv.nfold <- 3
+
+bst.cv = xgb.cv(param=param, data = trainMatrix, label = y, 
+                nfold = cv.nfold, nrounds = cv.nround)
+
+# train the real model
+nround = 139
+bst = xgboost(param=param, data = trainMatrix, label = y, nrounds=nround)
+
+pre_result <- predict(bst, testMatrix)
+
+
+write.csv(pre_result, quote = F, row.names = F, file = "./predict_result.csv")
 ```
 
