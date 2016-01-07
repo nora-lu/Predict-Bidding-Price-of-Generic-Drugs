@@ -10,3 +10,5 @@ columnsAAndB<-(regions[,c(2:15)])
 for (i in names(columnsAAndB)) {
   regions[[i]] <-as.numeric(gsub(",","", regions[[i]]))
 }
+
+write.csv(regions, file = "CAX_AdditionalData/CAX_AdditionalData_Regions.csv")
