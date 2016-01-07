@@ -20,3 +20,8 @@ https://www.crowdanalytix.com/contests/predict-bidding-price-of-generic-drugs
 1. What is the difference between pre LOE price data and post LOE data?
 2. MAPE?
 3. What is Price_per_standard_unit?
+
+## Things to do
+1. must seperate the train data as pro and post LOE.
+2. The number of vendors can be added as a feature.
+3. What are our assumptions?
