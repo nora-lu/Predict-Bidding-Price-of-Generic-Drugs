@@ -1,4 +1,4 @@
-setwd("/Users/shushenglu/GitHub/Predict-Bidding-Price-of-Generic-Drugs/data")
+setwd("./Predict-Bidding-Price-of-Generic-Drugs/data")
 
 molecules <- read.csv("CAX_AdditionalData/CAX_AdditionalData_Molecules.csv",
                       header = TRUE)
