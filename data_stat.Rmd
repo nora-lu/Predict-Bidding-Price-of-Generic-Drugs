@@ -9,6 +9,8 @@ Cleaning and some basic operation on data
 ```{r}
 library(data.table)
 library(ggplot2)
+library(reshape2)
+
 
 parseDateAndOthers <- function(train_data) {
   train_data$Start_date = as.Date(train_data$Start_date, "%d-%m-%Y")
@@ -71,13 +73,24 @@ ggplot(train_data[Province == "Provice1" & Region == "Region1"], aes(x = Start_d
 
 Join with other tables
 ```{r}
+# dealing with years
 regions <- read.csv("./data/CAX_AdditionalData_Regions.csv", header = T)
 columnsAAndB<-(regions[,c(2:15)])
 for (i in names(columnsAAndB)) {
   regions[[i]] <-as.numeric(gsub(",","", regions[[i]]))
 }
-colnames(regions) <- paste(colnames(regions), "_R", sep = "")
 colnames(regions)[1] <- "Region"
+regions_tmp <- data.table(melt(regions, id= "Region"))
+
+library(stringr)
+new_cols <- str_split_fixed(regions_tmp$variable, "_", 2)
+tmp <- cbind(year = substr(new_cols[, 1], 2, 5), property = new_cols[, 2], subset(regions_tmp, select = -variable))
+melt(tmp, id.var = c("Region","year"), direction = "wide") 
+
+regions <- dcast(tmp, Region + year ~ property, value.var="value")
+
+colnames(regions) <- paste(colnames(regions), "_R", sep = "")
+
 
 molecules <- read.csv("./data/CAX_AdditionalData/CAX_AdditionalData_Molecules.csv",header = T)
 molecules$Molecule <- factor(paste("Molecule", molecules$Molecule, sep = ""))
