@@ -10,8 +10,6 @@ Cleaning and some basic operation on data
 library(data.table)
 library(ggplot2)
 
-train_data <- read.csv("./data/CAX_Bidding_TRAIN_Molecule_3_4_5.csv")
-
 parseDateAndOthers <- function(train_data) {
   train_data$Start_date = as.Date(train_data$Start_date, "%d-%m-%Y")
   train_data$End_date_including_extension = as.Date(train_data$End_date_including_extension, "%d-%m-%Y")
@@ -26,31 +24,34 @@ parseDateAndOthers <- function(train_data) {
   )
   
   train_data = subset(train_data, select = Province:Competitor_3rd_Lowest_Price_per_standard_unit)
-  return(data.table(train_data))
+  return(train_data)
 }
 
+train_data <- read.csv("./data/CAX_Bidding_TRAIN_Molecule_3_4_5.csv", stringsAsFactors = F)
 train_data = parseDateAndOthers(train_data)
 
 # add a column for LOE date
-train_data[, LOEDate := as.Date("2011-01-01", format = "%Y-%m-%d")]
-train_data[Molecule == "Molecule3", LOEDate := as.Date("2009-01-01", format = "%Y-%m-%d")]
+train_data$LOEDate = as.Date("2011-01-01", format = "%Y-%m-%d")
+train_data[train_data$Molecule == "Molecule3", "LOEDate"] = as.Date("2009-01-01", format = "%Y-%m-%d")
 # test whether I did the right thing
-train_data[, table(Molecule, LOEDate)]
+table(train_data$Molecule, train_data$LOEDate)
 
 # add test_pre as a training data
 test_pre_data  <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Pre_LOE.csv", stringsAsFactors = F)
 test_pre_data = parseDateAndOthers(test_pre_data)
 
-test_pre_data[, LOEDate := as.Date("2011-01-01", format = "%Y-%m-%d")]
-#train_data <- rbind(data.frame(train_data), data.frame(test_pre_data))
+test_pre_data$LOEDate = as.Date("2011-01-01", format = "%Y-%m-%d")
+
+train_data <- rbind(data.frame(train_data), data.frame(test_pre_data))
 
 # for testing data
 ## join test pos and test pre
 test_pos_data <- read.csv("./data/CAX_Bidding_TEST_Molecule_6_Post_LOE.csv")
 
 test_data = parseDateAndOthers(test_pos_data)
-test_data <- data.table(test_data)
-test_data[, LOEDate := as.Date("2011-01-01", format = "%Y-%m-%d")]
+
+test_data$LOEDate = as.Date("2011-01-01", format = "%Y-%m-%d")
+
 
 
 summary(test_data)
@@ -85,13 +86,11 @@ colnames(mole_data) <- paste(colnames(mole_data), "_M", sep = "")
 molecules <- cbind(Molecule = molecules[, "Molecule"], mole_data)
 
 print(dim(train_data))
-train_data <- data.frame(train_data)
 train_data <- merge(train_data, regions, by = "Region", all.x = T)
 train_data <- merge(train_data, molecules, by = "Molecule", all.x = T)
 print(dim(train_data))
 
 print(dim(test_data))
-test_data <- data.frame(test_data)
 test_data <- merge(test_data, regions, by = "Region", all.x = T)
 test_data <- merge(test_data, molecules, by = "Molecule", all.x = T)
 print(dim(test_data))
@@ -105,7 +104,20 @@ library(caret)
 library(xgboost)
 require(magrittr)
 
-train_table <- data.table(train_data[!is.na(train_data[, "Winning_price_per_standard_unit"]),])
+
+## convert to factor
+ToFactor <- function(data_frame) {
+  for (col in colnames(data_frame)) {
+    if (is.character(data_frame[1, col])) {
+      data_frame[[col]] = factor(data_frame[[col]])
+    }
+  }
+  return(data_frame)
+}
+train_data = ToFactor(train_data)
+test_data  = ToFactor(test_data)
+
+train_table <- data.table(train_data[!is.na(train_data[, "Winning_price_per_standard_unit"]) & train_data[, "Winning_price_per_standard_unit"] < 7,])
 test_table  <- data.table(test_data)
 
 ## filling the  NAN values
@@ -114,6 +126,7 @@ train_table[is.na(Competitor_3rd_Lowest_Price_per_standard_unit), Competitor_3rd
 
 test_table[is.na(Competitor_2nd_Lowest_Price_per_standard_unit), Competitor_2nd_Lowest_Price_per_standard_unit := 1000]
 test_table[is.na(Competitor_3rd_Lowest_Price_per_standard_unit), Competitor_3rd_Lowest_Price_per_standard_unit := 1000]
+
 
 trainMatrix <- train_table[,lapply(.SD,as.numeric)] %>% as.matrix
 testMatrix <-  test_table[,lapply(.SD,as.numeric)] %>% as.matrix
@@ -131,13 +144,13 @@ bst.cv = xgb.cv(param=param, data = subset(trainMatrix, select = -Winning_price_
                 nfold = cv.nfold, nrounds = cv.nround)
 
 # train the real model
-nround = 73
+nround = 69
 bst = xgboost(param=param, data = subset(trainMatrix, select = -Winning_price_per_standard_unit), label = trainMatrix[, "Winning_price_per_standard_unit"], nrounds=nround)
 
 pre_result <- predict(bst, subset(testMatrix, select = -Winning_price_per_standard_unit) )
 
 submit_format <- read.csv("./data/CAX_Bidding_SubmissionFormat.csv")
-submit_format[, "Winning_price_per_standard_unit"] <- pre_result / 10
+submit_format[, "Winning_price_per_standard_unit"] <- pre_result
 write.csv(submit_format, quote = F, row.names = F, file = "./predict_result.csv")
 ```
 
