@@ -44,7 +44,7 @@ test_pre_data = parseDateAndOthers(test_pre_data)
 
 test_pre_data$LOEDate = as.Date("2011-01-01", format = "%Y-%m-%d")
 
-train_data <- rbind(data.frame(train_data), data.frame(test_pre_data))
+# train_data <- rbind(data.frame(train_data), data.frame(test_pre_data))
 
 # for testing data
 ## join test pos and test pre
@@ -177,7 +177,7 @@ bst.cv = xgb.cv(param=param, data = subset(trainMatrix, select = -Winning_price_
                 nfold = cv.nfold, nrounds = cv.nround)
 
 # train the real model
-nround = 76
+nround = 69
 bst = xgboost(param=param, data = subset(trainMatrix, select = -Winning_price_per_standard_unit), label = trainMatrix[, "Winning_price_per_standard_unit"], nrounds=nround)
 
 pre_result <- predict(bst, subset(testMatrix, select = -Winning_price_per_standard_unit) )
