@@ -95,8 +95,18 @@ colnames(regions) <- paste(colnames(regions), "_R", sep = "")
 molecules <- read.csv("./data/CAX_AdditionalData/CAX_AdditionalData_Molecules.csv",header = T)
 molecules$Molecule <- factor(paste("Molecule", molecules$Molecule, sep = ""))
 mole_data <- subset(molecules, select = Code_1:X2014_B)
-colnames(mole_data) <- paste(colnames(mole_data), "_M", sep = "")
 molecules <- cbind(Molecule = molecules[, "Molecule"], mole_data)
+
+# Divide molecules data to separate rows by year
+molecules_tmp <- data.table(melt(molecules, id= "Molecule", measure = 7:20)) # Skip "Code_1 ~ 5", only melt yearly data
+new_cols <- str_split_fixed(molecules_tmp$variable, "_", 2)
+tmp <- cbind(year = substr(new_cols[, 1], 2, 5), property = new_cols[, 2], subset(molecules_tmp, select = -variable))
+melt(tmp, id.var = c("Molecule","year"), direction = "wide") 
+molecules_noCodes <- dcast(tmp, Molecule + year ~ property, value.var="value")
+molecules_noCodes <- merge (molecules_noCodes, molecules[1:6], by = "Molecule", all.x = TRUE) #join codes from original table
+molecules <- molecules_noCodes
+colnames(molecules) <- paste(colnames(molecules), "_M", sep = "")
+
 
 print(dim(train_data))
 train_data <- merge(train_data, regions, by = "Region", all.x = T)
