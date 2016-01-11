@@ -91,7 +91,6 @@ regions <- dcast(tmp, Region + year ~ property, value.var="value")
 
 colnames(regions) <- paste(colnames(regions), "_R", sep = "")
 
-
 molecules <- read.csv("./data/CAX_AdditionalData/CAX_AdditionalData_Molecules.csv",header = T)
 molecules$Molecule <- factor(paste("Molecule", molecules$Molecule, sep = ""))
 mole_data <- subset(molecules, select = Code_1:X2014_B)
@@ -107,16 +106,25 @@ molecules_noCodes <- merge (molecules_noCodes, molecules[1:6], by = "Molecule", 
 molecules <- molecules_noCodes
 colnames(molecules) <- paste(colnames(molecules), "_M", sep = "")
 
+test_data$year <- substr(test_data$Offer_date,1,4)
+train_data$year <- substr(train_data$Offer_date,1,4)
 
 print(dim(train_data))
-train_data <- merge(train_data, regions, by = "Region", all.x = T)
-train_data <- merge(train_data, molecules, by = "Molecule", all.x = T)
+train_data <- merge(train_data, regions, by.x = c("Region", "year")
+                        , by.y = c("Region_R", "year_R"),all.x = TRUE)
+train_data <- merge(train_data, molecules, by.x = c("Molecule","year")
+                   , by.y = c("Molecule_M","year_M"), all.x = TRUE)
 print(dim(train_data))
 
 print(dim(test_data))
-test_data <- merge(test_data, regions, by = "Region", all.x = T)
-test_data <- merge(test_data, molecules, by = "Molecule", all.x = T)
+test_data <- merge(test_data, regions, by.x = c("Region", "year")
+                        , by.y = c("Region_R", "year_R"),all.x = TRUE)
+test_data <- merge(test_data_temp, molecules, by.x = c("Molecule","year")
+                   , by.y = c("Molecule_M","year_M"), all.x = TRUE)
 print(dim(test_data))
+
+test_data$year <- NULL
+train_data$year <- NULL
 ```
 
 
