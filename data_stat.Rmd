@@ -107,7 +107,9 @@ molecules <- molecules_noCodes
 colnames(molecules) <- paste(colnames(molecules), "_M", sep = "")
 
 test_data$year <- substr(test_data$Offer_date,1,4)
+test_data$year[test_data$year == 2015] <- 2014
 train_data$year <- substr(train_data$Offer_date,1,4)
+train_data$year[train_data$year == 2015] <- 2014
 
 print(dim(train_data))
 train_data <- merge(train_data, regions, by.x = c("Region", "year")
@@ -119,10 +121,10 @@ print(dim(train_data))
 print(dim(test_data))
 test_data <- merge(test_data, regions, by.x = c("Region", "year")
                         , by.y = c("Region_R", "year_R"),all.x = TRUE)
-test_data <- merge(test_data_temp, molecules, by.x = c("Molecule","year")
+test_data <- merge(test_data, molecules, by.x = c("Molecule","year")
                    , by.y = c("Molecule_M","year_M"), all.x = TRUE)
 print(dim(test_data))
-
+ 
 test_data$year <- NULL
 train_data$year <- NULL
 ```
@@ -175,7 +177,7 @@ bst.cv = xgb.cv(param=param, data = subset(trainMatrix, select = -Winning_price_
                 nfold = cv.nfold, nrounds = cv.nround)
 
 # train the real model
-nround = 69
+nround = 76
 bst = xgboost(param=param, data = subset(trainMatrix, select = -Winning_price_per_standard_unit), label = trainMatrix[, "Winning_price_per_standard_unit"], nrounds=nround)
 
 pre_result <- predict(bst, subset(testMatrix, select = -Winning_price_per_standard_unit) )
