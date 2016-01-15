@@ -67,7 +67,7 @@ ggplot(test_pre_data, aes(x = Winning_price_per_standard_unit, color = Molecule)
 
 ```{r}
 ggplot(train_data, aes(x = Start_date, y = Winning_price_per_standard_unit, color = Molecule))+ geom_line()
-
+ 
 ggplot(train_data[Province == "Provice1" & Region == "Region1"], aes(x = Start_date, y = Winning_price_per_standard_unit, color = Molecule))+ geom_line()
 ```
 
@@ -124,7 +124,26 @@ test_data <- merge(test_data, regions, by.x = c("Region", "year")
 test_data <- merge(test_data, molecules, by.x = c("Molecule","year")
                    , by.y = c("Molecule_M","year_M"), all.x = TRUE)
 print(dim(test_data))
- 
+
+# Select pre LOE data from train_data i.e. Mol3's 2008, Mol4 and Mol5's 2011
+train_pre_data <- rbind(train_data[train_data[,"year"]==2008,], train_data[train_data[,"year"]==2011 & (train_data[,"Molecule"]== "Molecule4" | train_data[,"Molecule"] == "Molecule5"),])
+
+# Remove pre data from train_data
+train_data <- rbind(train_data[(train_data[,"year"] != 2008 & train_data[,"Molecule"]== "Molecule3"),], train_data[train_data[,"year"] != 2011 & (train_data[,"Molecule"] == "Molecule4" | train_data[,"Molecule"] == "Molecule5"),])
+
+median_train_pre <- aggregate(train_pre_data$Winning_price_per_standard_unit, FUN = median,
+                            by = list(Molecule = train_pre_data$Molecule,Region = train_pre_data$Region),
+                            na.rm = TRUE)
+
+median_test_pre <- aggregate(test_pre_data$Winning_price_per_standard_unit, FUN = median,
+                            by = list(Region = test_pre_data$Region))
+
+train_data <- merge(train_data, median_train_pre, by.x = c("Molecule","Region")
+                        , by.y = c("Molecule", "Region"),all.x = TRUE)
+
+test_data <- merge(test_data, median_test_pre, by.x = c("Region")
+                        , by.y = c("Region"),all.x = TRUE)
+
 test_data$year <- NULL
 train_data$year <- NULL
 ```
@@ -177,7 +196,7 @@ bst.cv = xgb.cv(param=param, data = subset(trainMatrix, select = -Winning_price_
                 nfold = cv.nfold, nrounds = cv.nround)
 
 # train the real model
-nround = 69
+nround = 55
 bst = xgboost(param=param, data = subset(trainMatrix, select = -Winning_price_per_standard_unit), label = trainMatrix[, "Winning_price_per_standard_unit"], nrounds=nround)
 
 pre_result <- predict(bst, subset(testMatrix, select = -Winning_price_per_standard_unit) )
